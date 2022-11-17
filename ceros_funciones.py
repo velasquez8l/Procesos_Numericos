@@ -6,6 +6,26 @@ from abc import ABC, abstractmethod
 from pydantic import BaseModel
 from scipy.misc import derivative
 from datos import info_metodos
+from sympy.parsing.sympy_parser import (
+    parse_expr,
+    standard_transformations,
+    function_exponentiation,
+    implicit_multiplication_application,
+)
+
+
+def get_expr(function):
+
+    return parse_expr(
+        function,
+        transformations=(
+            standard_transformations
+            + (
+                function_exponentiation,
+                implicit_multiplication_application,
+            )
+        ),
+    )
 
 
 class Solver2P(ABC, BaseModel):
@@ -467,41 +487,6 @@ class CerosMultiplesNewton(Solver2P):
         return df
 
 
-def calculo_n_puntofijo(datos):
-    xo = datos["xo"]
-    a = datos["a"]
-    b = datos["b"]
-    k = datos["k"]
-    tol = datos["tol"]
-
-    return np.log(tol / max([xo - a, b - xo])) / np.log(k)
-
-
-def calcuo_n_biseccion(datos):
-    xv = datos["xv"]
-    a = datos["a"]
-    b = datos["b"]
-    xmv = datos["xmv"]
-    return np.log2((b - a) / abs(xv - xmv))
-
-
-def calculo_n_busqueda(datos):
-    delta = datos["delta"]
-    x = datos["x"]
-    x0 = datos["x0"]
-    n = datos["n"]
-    respuesta = []
-    for pos, i in enumerate(x0):
-        respuesta.append(i + delta * n[pos] > x)
-    return respuesta
-
-
-calculo_n = dict(
-    punto_fijo=calculo_n_puntofijo,
-    biseccion=calcuo_n_biseccion,
-    busqueda=calculo_n_busqueda,
-)
-
 metodos = dict(
     biseccion=Biseccion,
     regla_falsa=RegulaFalsi,
@@ -520,7 +505,7 @@ def clearConsole():
     os.system(command)
 
 
-def menu():
+def menu_metodos():
     print("Nombres Metodos Numericos:")
     print("1. Biseccion")
     print("2. Regla_falsa")
@@ -534,10 +519,21 @@ def menu():
     print()
 
 
+def menu_funcion(nombre):
+    funciones=[]
+    print("Ingrese la funcion:")
+    funcion = str(input())
+    funciones.append(funcion)
+
+    if nombre=='Punto_fijo':
+        print("Ingrese la funcion g(x):")
+        funcion_g = str(input())
+        funciones.append(funcion_g)
+    return funciones
 def metodo():
     while True:
         clearConsole()
-        menu()
+        menu_metodos()
         try:
             tipo_metodo = str(input("ingrese el metodo numerico: "))
             if len(tipo_metodo) == 1:
@@ -584,23 +580,6 @@ def main():
     solver_results = solver.solver()
     solver_results.to_excel("tabla_de_resultados.xlsx", index=False)
     solver.graficar(nombre)
-
-
-def calcular_n():
-    # CALCULO DE N
-    tipo_metodo = "punto_fijo"
-    datos = {
-        "punto_fijo": {"xo": -0.5, "a": -3, "b": -1, "k": 0.7, "tol": 0.5e-3},
-        "biseccion": {"a": -4, "b": 0, "xv": -3.1415, "xmv": -3.1418},
-        "busqueda": {
-            "delta": 0.1,
-            "x": 0.875,
-            "x0": [-0.8, -0.5, 0, 0.8],
-            "n": [16, 14, 10, 1],
-        },
-    }
-    n = calculo_n[tipo_metodo](datos[tipo_metodo])
-    # print(n)
 
 
 if __name__ == "__main__":

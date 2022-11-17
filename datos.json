@@ -1,0 +1,11 @@
+{
+  "1": { "biseccion": { "x0": null, "x1": null, "TOL": null, "N_max": null } },
+  "2": {
+    "regla_falsa": { "x0": null, "x1": null, "TOL": null, "N_max": null }
+  },
+  "3": { "secante": { "x0": null, "x1": null, "TOL": null, "N_max": null } },
+  "4": { "newton": { "x0": null, "TOL": null, "N_max": null } },
+  "5": { "punto_fijo": { "x0": null, "TOL": null, "N_max": null } },
+  "6": { "busqueda_incremental": { "x0": null, "delta": null, "N_max": null } },
+  "7": { "newton_ceros_multiples": { "x0": null, "TOL": null, "N_max": null } }
+}
