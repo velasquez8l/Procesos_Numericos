@@ -1,6 +1,24 @@
 import numpy as np
 import scipy
+import pandas as pd
+from sympy.parsing.sympy_parser import (
+    parse_expr,
+    standard_transformations,
+    function_exponentiation,
+    implicit_multiplication_application,
+)
+import sympy
+import matplotlib.pyplot as plt
+def parse_pol(pols):
+    polinomios = []
+    x_symbol = sympy.Symbol("x")
+    for pol in pols:
+        polinomio = sum(
+            pol[i] * x_symbol ** (len(pol) - 1 - i) for i in range(len(pol))
+        )
+        polinomios.append(str(sympy.simplify(polinomio)))
 
+    return polinomios
 
 def mathJacobiSeidel(x0, A, b, tol, n_iter_max, method):
 
@@ -11,7 +29,8 @@ def mathJacobiSeidel(x0, A, b, tol, n_iter_max, method):
     message = ""
     errores = [tol + 1]
     itera = [x0]
-
+    num_iter=[1]
+    ni=1
     for _ in range(n_iter_max):
         if errores[-1] <= tol:
             message = f"{x0} es una aproximación de la solución del sistema con una tolerancia= {tol}"
@@ -23,19 +42,18 @@ def mathJacobiSeidel(x0, A, b, tol, n_iter_max, method):
             x1 = T.dot(x0) + C
         elif method == "seidel":
             T = np.linalg.inv(D - L).dot(U)
-            print(T)
             C = np.linalg.inv(D - L).dot(b)
             x1 = T.dot(x0) + C
-           
+        ni+=1
+        num_iter.append(ni)
 
-
-        # errores.append(np.linalg.norm(x1 - x0))
-        itera.append(x0)
+        errores.append(np.linalg.norm(x1 - x0,np.inf)/np.linalg.norm(x1,np.inf))
+        itera.append(x1)
         x0 = x1
     else:
         message = f"Fracasó en {n_iter_max} iteraciones"
 
-    return errores, x0, message, itera
+    return errores, x0, message, itera,num_iter
 
 
 def iterativos(x0, A, b, tol, n_iter_max, method):
@@ -185,26 +203,75 @@ def sustitucion_progresiva(Ab):
         x[i] = (Ab[i, n + 1] - suma) / Ab[i, i]
 
     return x
+def spline_cuadratico(x, y):
+    d = 2
+    n = len(x)
+    A = np.zeros(((d + 1) * (n - 1), (d + 1) * (n - 1)))
+    b = np.zeros(((d + 1) * (n - 1), 1))
+    cua = x ** 2
 
+    c = 0
+    h = 0
+    for i in range(n - 1):
+        A[i, c] = cua[i]
+        A[i, c + 1] = x[i]
+        A[i, c + 2] = 1
+        b[i] = y[i]
+        c += 3
+        h += 1
 
-# def k(T):
-#     return np.log()
+    c = 0
+    for i in range(1, n):
+        A[h, c] = cua[i]
+        A[h, c + 1] = x[i]
+        A[h, c + 2] = 1
+        b[h] = y[i]
+        c += 3
+        h += 1
+
+    c = 0
+    for i in range(1, n - 1):
+        A[h, c] = 2 * x[i]
+        A[h, c + 1] = 1
+        A[h, c + 3] = -2 * x[i]
+        A[h, c + 4] = -1
+        b[h] = 0
+        c += 4
+        h += 1
+
+    A[h, 0] = 2
+    b[h] = 0
+
+    val = np.dot(np.linalg.inv(A), b)
+    pols = np.reshape(val, (n - 1, d + 1))
+    polinomios = parse_pol(pols)
+    return polinomios, pols.tolist()
+def get_expr(function):
+
+    return parse_expr(
+        function,
+        transformations=(
+            standard_transformations
+            + (
+                function_exponentiation,
+                implicit_multiplication_application,
+            )
+        ),
+    )
+
 def main():
 
-    x0 = np.array([[1], [3], [2]])
-    A = np.array([[3, -5, -8], [2, 4, 6], [3, 4, -12]])
-    b = np.array([[-15], [12], [8]])
+    x0 = np.array([[1], [1], [1]])
+    A = np.array([[15,5,4], [5,25,4], [5,4,5]])
+    b = np.array([[10], [10], [10]])
     tol = 0.5e-5
     n_iter_max = 100
     method = "seidel"
 
-    errores, x0, message, itera = mathJacobiSeidel(x0, A, b, tol, n_iter_max, method)
-    print(x0)
-    print()
-
+    
+    errores, x0, message, itera,num_iter = mathJacobiSeidel(x0, A, b, tol, n_iter_max, method)
+    df=pd.DataFrame({"n iteraciones":num_iter,"Xi":itera,"errores":errores})
+    df.to_excel("tabla.xlsx",index=False)
 
 if __name__ == "__main__":
     main()
-    # A = [[0, 1.66666667, 2.66666667], [-0.5, 0, -1.5], [0.25, 0.33333333, 0]]
-    # val,vect=np.linalg.eig(A)
-    # print(max(abs(val)))

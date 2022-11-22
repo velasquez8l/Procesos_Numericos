@@ -35,24 +35,24 @@ class Solver2P(ABC, BaseModel):
     N_max: int = None
     delta: float = None
 
-    def f(self, x):
-        return (np.exp(-x) * x**2) + (4 * np.exp(-x) * x) + (4 / np.exp(x))
+    # def f(self, x):
+    #     return (np.exp(-x) * x**2) + (4 * np.exp(-x) * x) + (4 / np.exp(x))
 
-    def fd(self, x):
-        return derivative(self.f, x, dx=1e-6)
+    # def fd(self, x):
+    #     return derivative(self.f, x, dx=1e-6)
 
-    def g(self, x):
-        return np.exp(-x) - np.log(x)
+    # def g(self, x):
+    #     return np.exp(-x) - np.log(x)
 
-    def fd2(self, x):
-        return derivative(self.f, x, dx=1e-6, n=2)
+    # def fd2(self, x):
+    #     return derivative(self.f, x, dx=1e-6, n=2)
 
-    def graficar(self, nombre_metodo):
+    def graficar(self, nombre_metodo,f):
         fig = plt.figure()
         xs = list(np.linspace(-10, 10, 100))
         limitex = 15
         limitey = 15
-        ys = [self.f(x) for x in xs]
+        ys = [f(x) for x in xs]
         plt.plot(xs, ys, color="blue", label="f(x)")
         plt.grid()
         plt.ylim(-limitex, limitex)
@@ -74,7 +74,7 @@ class Biseccion(Solver2P):
 
     type = "biseccion"
 
-    def solver(self):
+    def solver(self,f):
 
         """
         Dada una función f definida en el intervalo [x0,x1] tal que f(x0)*f(x1)<0,
@@ -103,8 +103,8 @@ class Biseccion(Solver2P):
         for i in range(self.N_max):
             if abs(x - y) < self.TOL:
                 iteracion.append(i + 1)
-                funcx0.append(self.f(self.x0))
-                funcx1.append(self.f(self.x1))
+                funcx0.append(f(self.x0))
+                funcx1.append(f(self.x1))
                 x0.append(self.x0)
                 x1.append(self.x1)
                 x_mitad.append(x)
@@ -119,13 +119,13 @@ class Biseccion(Solver2P):
                         "Error": Error,
                     }
                 )
-                return df
+                return df,x
             x = (self.x0 + self.x1) / 2
             x0.append(self.x0)
             x1.append(self.x1)
-            funcx0.append(self.f(self.x0))
-            funcx1.append(self.f(self.x1))
-            if self.f(self.x0) * self.f(x) < 0:
+            funcx0.append(f(self.x0))
+            funcx1.append(f(self.x1))
+            if f(self.x0) * f(x) < 0:
                 self.x1 = x
             else:
                 self.x0 = x
@@ -145,13 +145,13 @@ class Biseccion(Solver2P):
                 "Error": Error,
             }
         )
-        return df
+        return df,x
 
 
 class RegulaFalsi(Solver2P):
     type = "regla_falsa"
 
-    def solver(self):
+    def solver(self,f):
         """
         Dada una función f definida en los reales tal que f(x0)*f(x1)<0,
         devuelve un cero de la función usando el método de la regula-falsi.
@@ -166,8 +166,8 @@ class RegulaFalsi(Solver2P):
         Valor de retorno
         * x: f(x) es aproximadamente 0
         """
-        y0 = self.f(self.x0)
-        y1 = self.f(self.x1)
+        y0 = f(self.x0)
+        y1 = f(self.x1)
         iteracion = []
         x0 = []
         x1 = []
@@ -179,8 +179,8 @@ class RegulaFalsi(Solver2P):
             x = self.x1 - ((self.x0 - self.x1) / (y0 - y1)) * y1
             if min(abs(x - self.x1), abs(x - self.x0)) < self.TOL:
                 iteracion.append(i + 1)
-                funcx0.append(self.f(self.x0))
-                funcx1.append(self.f(self.x1))
+                funcx0.append(f(self.x0))
+                funcx1.append(f(self.x1))
                 x0.append(self.x0)
                 x1.append(self.x1)
                 x_mitad.append(x)
@@ -195,13 +195,13 @@ class RegulaFalsi(Solver2P):
                         "Error": Error,
                     }
                 )
-                return df
-            y = self.f(x)
+                return df,x
+            y = f(x)
             Error.append(min(abs(x - self.x1), abs(x - self.x0)))
             x0.append(self.x0)
             x1.append(self.x1)
-            funcx0.append(self.f(self.x0))
-            funcx1.append(self.f(self.x1))
+            funcx0.append(f(self.x0))
+            funcx1.append(f(self.x1))
             if y * y1 < 0:
                 self.x0 = self.x1
                 y0 = y1
@@ -221,13 +221,13 @@ class RegulaFalsi(Solver2P):
                 "Error": Error,
             }
         )
-        return df
+        return df,x
 
 
 class Secante(Solver2P):
     type = "secante"
 
-    def solver(self):
+    def solver(self,f):
         """
         Dada una función f definida en los reales con valores iniciales x0 y x1 con f(x0) distinto de f(x1),
         devuelve un cero de la función usando el método de la secante.
@@ -243,8 +243,8 @@ class Secante(Solver2P):
         Valor de retorno
         * cero: f(cero) es aproximadamente 0
         """
-        y0 = self.f(self.x0)
-        y1 = self.f(self.x1)
+        y0 = f(self.x0)
+        y1 = f(self.x1)
         iteracion = []
         x0 = []
         x1 = []
@@ -256,8 +256,8 @@ class Secante(Solver2P):
             x = self.x1 - ((self.x0 - self.x1) / (y0 - y1)) * y1
             if abs(x - self.x1) < self.TOL:
                 iteracion.append(i + 1)
-                funcx0.append(self.f(self.x0))
-                funcx1.append(self.f(self.x1))
+                funcx0.append(f(self.x0))
+                funcx1.append(f(self.x1))
                 x0.append(self.x0)
                 x1.append(self.x1)
                 x_mitad.append(x)
@@ -272,16 +272,16 @@ class Secante(Solver2P):
                         "Error": Error,
                     }
                 )
-                return df
+                return df,x
             x0.append(self.x0)
             x1.append(self.x1)
             Error.append(abs(x - self.x1))
-            funcx0.append(self.f(self.x0))
-            funcx1.append(self.f(self.x1))
+            funcx0.append(f(self.x0))
+            funcx1.append(f(self.x1))
             self.x0 = self.x1
             y0 = y1
             self.x1 = x
-            y1 = self.f(x)
+            y1 = f(x)
             x_mitad.append(x)
             iteracion.append(i + 1)
         del Error[-1]
@@ -296,13 +296,13 @@ class Secante(Solver2P):
                 "Error": Error,
             }
         )
-        return df
+        return df,x
 
 
 class NewtonRaphson(Solver2P):
     type = "newton"
 
-    def solver(self):
+    def solver(self,f,fd):
         """
         Dada una función f definida en los reales dónde f'(x0) és distinto de 0,
         devuelve un cero de la función usando el método de Newton-Raphson.
@@ -328,27 +328,27 @@ class NewtonRaphson(Solver2P):
         for i in range(self.N_max):
             if abs(cero - ant) < self.TOL:
                 iteracion.append(i + 1)
-                func.append(self.f(cero))
+                func.append(f(cero))
                 xs.append(cero)
                 df = pd.DataFrame(
                     {"n": iteracion, "x": xs, "f(x)": func, "Error": Error}
                 )
-                return df
+                return df,cero
             ant = cero
-            cero = cero - self.f(cero) / self.fd(cero)
+            cero = cero - f(cero) / fd(cero)
             xs.append(ant)
-            func.append(self.f(ant))
+            func.append(f(ant))
             iteracion.append(i + 1)
             Error.append(abs(cero - ant))
         del Error[-1]
         df = pd.DataFrame({"n": iteracion, "x": xs, "f(x)": func, "Error": Error})
-        return df
+        return df,cero
 
 
 class PuntoFijo(Solver2P):
     type = "punto_fijo"
 
-    def solver(self):
+    def solver(self,f,g):
         """
         Dada una función g definida en los reales dónde g'(x0)<1,
         devuelve un punto fijo de la función g usando el método
@@ -376,32 +376,32 @@ class PuntoFijo(Solver2P):
         for i in range(self.N_max):
             if abs(pf - ant) <= self.TOL:
                 iteracion.append(i + 1)
-                func.append(self.f(pf))
+                func.append(f(pf))
                 xs.append(pf)
                 df = pd.DataFrame(
                     {"n": iteracion, "x": xs, "f(x)": func, "Error": Error}
                 )
-                return df
+                return df,pf
             ant = pf
-            pf = self.g(pf)
+            pf = g(pf)
             xs.append(ant)
-            func.append(self.f(ant))
+            func.append(f(ant))
             iteracion.append(i + 1)
             Error.append(abs(pf - ant))
         del Error[-1]
         df = pd.DataFrame({"n": iteracion, "x": xs, "f(x)": func, "Error": Error})
 
-        return df
+        return df,pf
 
 
 class BusquedaIncremental(Solver2P):
     type = "busqueda_incremental"
 
-    def solver(self):
+    def solver(self,f):
 
         x1 = self.x0 + self.delta
-        y0 = self.f(self.x0)
-        y1 = self.f(x1)
+        y0 = f(self.x0)
+        y1 = f(x1)
         iteracion = []
         x0 = []
         x1 = []
@@ -411,8 +411,8 @@ class BusquedaIncremental(Solver2P):
         for i in range(self.N_max):
             if y0 * y1 < 0:
                 iteracion.append(i + 1)
-                funcx0.append(self.f(self.x0))
-                funcx1.append(self.f(self.x1))
+                funcx0.append(f(self.x0))
+                funcx1.append(f(self.x1))
                 x0.append(self.x0)
                 x1.append(self.x1)
                 df = pd.DataFrame(
@@ -426,21 +426,21 @@ class BusquedaIncremental(Solver2P):
                 )
                 return self.x0
             iteracion.append(i + 1)
-            funcx0.append(self.f(self.x0))
-            funcx1.append(self.f(self.x1))
+            funcx0.append(f(self.x0))
+            funcx1.append(f(self.x1))
             x0.append(self.x0)
             x1.append(self.x1)
             self.x0 = x1
-            y0 = self.f(self.x0)
+            y0 = f(self.x0)
             x1 = self.x0 + self.delta
-            y1 = self.f(self.x1)
+            y1 = f(self.x1)
         return self.x1
 
 
 class CerosMultiplesNewton(Solver2P):
     type = "newton_ceros_multiples"
 
-    def solver(self):
+    def solver(self,f,fd,fd2):
         """
         Dada una función f definida en los reales dónde f'(x0) és distinto de 0,
         devuelve la succesión generada por el método de Newton-Raphson modificado.
@@ -467,24 +467,24 @@ class CerosMultiplesNewton(Solver2P):
         for i in range(self.N_max):
             if abs(cero - ant) < self.TOL:
                 iteracion.append(i + 1)
-                func.append(self.f(cero))
+                func.append(f(cero))
                 xs.append(cero)
                 df = pd.DataFrame(
                     {"n": iteracion, "x": xs, "f(x)": func, "Error": Error}
                 )
-                return df
+                return df,cero
             ant = cero
             cero = cero - (
-                (self.f(cero) * self.fd(cero))
-                / ((((self.fd(cero)) ** 2) - (self.f(cero) * self.fd2(cero))))
+                (f(cero) * fd(cero))
+                / ((((fd(cero)) ** 2) - (f(cero) * fd2(cero))))
             )
             xs.append(ant)
-            func.append(self.f(ant))
+            func.append(f(ant))
             iteracion.append(i + 1)
             Error.append(abs(cero - ant))
         del Error[-1]
         df = pd.DataFrame({"n": iteracion, "x": xs, "f(x)": func, "Error": Error})
-        return df
+        return df,cero
 
 
 metodos = dict(
@@ -493,7 +493,6 @@ metodos = dict(
     secante=Secante,
     newton=NewtonRaphson,
     punto_fijo=PuntoFijo,
-    busqueda_incremental=BusquedaIncremental,
     newton_ceros_multiples=CerosMultiplesNewton,
 )
 

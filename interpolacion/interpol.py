@@ -227,6 +227,26 @@ def get_expr(function):
         ),
     )
 
+def f(r,w,ma,x):
+    return r*x-ma-((w*x**2)/2)
+
+
+def sol(a,b,c):
+    sol1=(-b+((b)**2-(4*a*c))**0.5)/(2*a)
+    sol2=(-b-((b)**2-(4*a*c))**0.5)/(2*a)
+    res=[sol1,sol2]
+    return list(sorted(res))
+
+def get_points():
+    w=10
+    L=5
+    r=w*L/2
+    ma=(w*L**2)/12
+    x1,x2=sol(w/2,-r,ma)
+    xs=np.array([0,x1,L/2,x2,L])
+    ys=np.array([f(r,w,ma,x) for x in xs ])
+
+    return xs,ys
 
 def error_newton(last,xs):
     error=last
@@ -235,40 +255,57 @@ def error_newton(last,xs):
         error*=(x_f-x)
     return error
 
-def newton():
-    graph=False
-    xs=[3,3.6667,4.3333]
-    ys=[6.7472,10.7997,15.8063]
-
+def newton(graph):
+    xs,ys=get_points()
     pol,tabla=diferencias_newton(xs, ys,graph)
 
     last=list({key:list(val.values()) for key,val in tabla.to_dict().items()}.values())
     last=last[-1][-1]
-
+    tabla.to_excel("tabla_newton.xlsx",index=False)
     error=error_newton(last,xs)
-
-    print(pol)
-    print()
-    print(tabla)
-    print()
     print(f" Error: {error}")
 
 
+
+
+def splines(graficar):
+    xs,ys=get_points()
+    pols,list_pols=spline_cubico(xs, ys)
+    # pols,list_pols=spline_lineal(xs, ys)
+
+    x=sympy.Symbol('x')
+    cx=[]
+    cy=[]
+    print(pols)
+
+    for i,pol in enumerate(pols):
+        pol=get_expr(pol)
+
+        x=sympy.Symbol("x")
+        cordsx=list(np.linspace(xs[i],xs[i+1],100))
+        cordsy=[pol.subs({x:cord})for cord in cordsx]
+        
+        cx.append(cordsx)
+        cy.append(cordsy)
+
+    if graficar:
+
+        plt.figure()
+        ax=plt.subplot()
+        for i,cord in enumerate(cx):
+            plt.plot(cord,cy[i],"-b")
+
+        for i,co in enumerate(xs):
+            plt.plot(co,ys[i],"*r")
+
+        plt.title(f"Momento flector")
+        ax.set_xlabel("Eje x")
+        ax.set_ylabel("Momentos")
+        ax.invert_yaxis()
+        plt.grid()
+        plt.show()
+
 if __name__=="__main__":
-    # newton()
-    # x=np.array([1,1.1,1.2])
-    # y=np.array([3.21,3.64,4.11])
-    # pols,list_pols=spline_cubico(x, y)  
-    # print(pols)
-    
-    ## lagrange
-    xs=[-1.8265,2.6988,5.5548]
-    val=3.85472
-    for i,xi in enumerate(xs) :
-        num = 1
-        den = 1
-        for j,xj in enumerate(xs):
-            if j != i:
-                num*= val-xj
-                den *= xi - xj
-        print(num / den)
+    graficar=False
+    newton(graficar)
+    # splines(graficar)
